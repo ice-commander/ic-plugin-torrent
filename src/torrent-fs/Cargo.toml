@@ -1,0 +1,24 @@
+[package]
+name = "ic-torrent-fs"
+version = "0.0.0"
+edition = "2021"
+description = "Browses and downloads torrents"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+ic-plugin-api = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+librqbit = { version = "8.1.0", default-features = false, features = ["default-tls", "disable-upload"] }
+tokio = { version = "1.36", features = ["full", "rt-multi-thread"] }
+
+[dev-dependencies]
+tempfile = "3"
+
+[features]
+default = ["export-abi"]
+export-abi = []
