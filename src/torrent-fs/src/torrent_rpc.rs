@@ -416,6 +416,27 @@ impl TorrentFileSystemRpc {
         }
     }
 
+    pub fn on_disk(&self, path: String) -> Option<std::path::PathBuf> {
+        if self.view.get() == TorrentView::Peers {
+            return None;
+        }
+        let wanted = normalize_internal_path(&path);
+        let contents = self.ensure_loaded().ok()?;
+        let entry = contents.entries.iter().find(|e| e.path == wanted)?;
+        if !crate::torrent_session::is_file_complete(
+            &self.relative_path_in_parent,
+            entry.id,
+            entry.size,
+        ) {
+            return None;
+        }
+        let real = crate::torrent_session::downloaded_file_path(
+            &self.relative_path_in_parent,
+            &entry.path,
+        );
+        real.is_file().then_some(real)
+    }
+
     pub fn read_file(&self, path: String) -> Result<Vec<u8>, AppError> {
         let wanted = normalize_internal_path(&path);
         if self.view.get() == TorrentView::Peers {

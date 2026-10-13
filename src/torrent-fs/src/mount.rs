@@ -24,6 +24,7 @@ struct Mounted {
     columns: RefCell<Vec<IcFsColumn>>,
     bytes: RefCell<Vec<u8>>,
     said: RefCell<CString>,
+    real_path: RefCell<CString>,
 }
 
 fn held(handle: IcFsHandle) -> Option<&'static Mounted> {
@@ -132,6 +133,7 @@ extern "C" fn open_in(
         columns: RefCell::new(Vec::new()),
         bytes: RefCell::new(Vec::new()),
         said: RefCell::new(CString::default()),
+        real_path: RefCell::new(CString::default()),
     });
     let handle = Box::into_raw(mounted) as IcFsHandle;
     crate::start_now(handle);
@@ -274,6 +276,20 @@ extern "C" fn columns(handle: IcFsHandle) -> IcColumns {
         items: borrowed.as_ptr(),
         ..IcColumns::EMPTY
     }
+}
+
+extern "C" fn on_disk(handle: IcFsHandle, path: *const c_char) -> *const c_char {
+    let Some(mounted) = held(handle) else {
+        return std::ptr::null();
+    };
+    let Some(real) = mounted.rpc.on_disk(path_of(path)) else {
+        return std::ptr::null();
+    };
+    let Ok(held_text) = CString::new(real.to_string_lossy().to_string()) else {
+        return std::ptr::null();
+    };
+    *mounted.real_path.borrow_mut() = held_text;
+    mounted.real_path.borrow().as_ptr()
 }
 
 extern "C" fn read(handle: IcFsHandle, path: *const c_char) -> IcBytes {
@@ -467,6 +483,12 @@ pub fn vtable() -> IcFsVTable {
         action_state: Some(action_state),
         cell_clicked: Some(cell_clicked),
         set_permissions: None,
+        stream_open: None,
+        stream_read: None,
+        stream_write: None,
+        stream_close: None,
+        copy_within: None,
+        on_disk: Some(on_disk),
     }
 }
 

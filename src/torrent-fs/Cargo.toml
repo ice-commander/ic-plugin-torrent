@@ -13,8 +13,13 @@ crate-type = ["cdylib", "rlib"]
 ic-plugin-api = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-librqbit = { version = "8.1.0", default-features = false, features = ["default-tls", "disable-upload"] }
 tokio = { version = "1.36", features = ["full", "rt-multi-thread"] }
+
+[target.'cfg(not(target_os = "android"))'.dependencies]
+librqbit = { version = "8.1.0", default-features = false, features = ["default-tls", "disable-upload"] }
+
+[target.'cfg(target_os = "android")'.dependencies]
+librqbit = { version = "8.1.0", default-features = false, features = ["rust-tls", "disable-upload"] }
 
 [dev-dependencies]
 tempfile = "3"
