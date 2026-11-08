@@ -65,7 +65,9 @@ fn read_whole(source: IcFsSource, named: &CStr) -> Option<Vec<u8>> {
     if host.is_null() {
         return None;
     }
-    let stream = unsafe { ((*host).fs_open)(source, named.as_ptr(), IC_OPEN_READ) };
+    let stream = unsafe {
+        ((*host).fs_open)(source, named.as_ptr(), IC_OPEN_READ, ic_plugin_api::IC_SIZE_UNKNOWN)
+    };
     if stream.is_null() {
         return None;
     }
@@ -489,6 +491,7 @@ pub fn vtable() -> IcFsVTable {
         stream_close: None,
         copy_within: None,
         on_disk: Some(on_disk),
+        stream_abort: None,
     }
 }
 
